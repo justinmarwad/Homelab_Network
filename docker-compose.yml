@@ -1,0 +1,45 @@
+version: '3'
+
+services:
+    ## Cloudflare DDNS for "lab.marwad.us" #
+    cloudflare-ddns:
+        image: oznu/cloudflare-ddns:latest
+        container_name: cloudflare-ddns
+        restart: always
+        environment:
+        - API_KEY=${CLOUDFLARE_API_KEY}
+        - ZONE=${CLOUDFLARE_ZONE}
+        - SUBDOMAIN=${CLOUDFLARE_SUBDOMAIN}
+        - PROXIED=true
+
+    ## Portainer ##
+    portainer:
+        image: portainer/portainer-ce:latest
+        ports:
+            - 9443:9443
+        volumes:
+            - ./data/portainer:/data
+            - /var/run/docker.sock:/var/run/docker.sock
+        restart: unless-stopped
+
+
+    ## Setup Global Caddy ##
+    caddy:
+        image: lucaslorentz/caddy-docker-proxy:ci-alpine
+        restart: always
+        ports:
+            - 80:80
+            - 443:443
+        environment:
+            - CADDY_INGRESS_NETWORKS=caddy
+        networks:
+            - caddy
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
+            - ./data/caddy:/data
+
+
+## Caddy Network ## 
+networks:
+    caddy:
+        external: true
